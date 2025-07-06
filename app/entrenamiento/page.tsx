@@ -1,611 +1,667 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useRef } from "react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  Activity,
-  Clock,
-  Flame,
-  Target,
+  BookOpen,
   Plus,
-  Play,
-  CheckCircle,
-  Circle,
-  Edit,
+  Save,
   Calendar,
-  TrendingUp,
-  Dumbbell,
+  Search,
+  Bold,
+  Italic,
+  Underline,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  List,
+  ListOrdered,
+  Quote,
+  Heading1,
+  Heading2,
+  Heading3,
+  Type,
+  FileText,
+  Clock,
+  Star,
   Heart,
-  Zap,
-  Weight,
-  RotateCcw,
+  Smile,
+  Frown,
+  Meh,
 } from "lucide-react"
-import { ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar } from "recharts"
 
-export default function EntrenamientoPage() {
-  const [selectedWorkout, setSelectedWorkout] = useState<string | null>(null)
-  const [showNewWorkoutDialog, setShowNewWorkoutDialog] = useState(false)
+interface DiaryEntry {
+  id: string
+  title: string
+  content: string
+  date: string
+  mood: "happy" | "neutral" | "sad" | "excited" | "anxious" | "grateful"
+  tags: string[]
+  favorite: boolean
+  wordCount: number
+}
 
-  // Datos del progreso semanal
-  const weeklyStats = {
-    entrenamientos: 4,
-    calorias: 1250,
-    minutos: 180,
-    completado: 67,
-    metaSemanal: 6,
-  }
+const MOODS = {
+  happy: { icon: Smile, color: "#10b981", label: "Feliz" },
+  excited: { icon: Star, color: "#f59e0b", label: "Emocionado" },
+  grateful: { icon: Heart, color: "#ec4899", label: "Agradecido" },
+  neutral: { icon: Meh, color: "#6b7280", label: "Neutral" },
+  anxious: { icon: Clock, color: "#f97316", label: "Ansioso" },
+  sad: { icon: Frown, color: "#ef4444", label: "Triste" },
+}
 
-  // Datos de tiempo por día
-  const timeData = [
-    { day: "Lun", tiempo: 45, fullDay: "Lunes" },
-    { day: "Mar", tiempo: 60, fullDay: "Martes" },
-    { day: "Mié", tiempo: 0, fullDay: "Miércoles" },
-    { day: "Jue", tiempo: 50, fullDay: "Jueves" },
-    { day: "Vie", tiempo: 40, fullDay: "Viernes" },
-    { day: "Sáb", tiempo: 0, fullDay: "Sábado" },
-    { day: "Dom", tiempo: 35, fullDay: "Domingo" },
-  ]
+const FONT_SIZES = [
+  { value: "12", label: "12px" },
+  { value: "14", label: "14px" },
+  { value: "16", label: "16px" },
+  { value: "18", label: "18px" },
+  { value: "20", label: "20px" },
+  { value: "24", label: "24px" },
+  { value: "32", label: "32px" },
+]
 
-  // Entrenamientos de hoy
-  const [todayWorkouts, setTodayWorkouts] = useState([
+export default function DiarioPage() {
+  const [entries, setEntries] = useState<DiaryEntry[]>([
     {
-      id: "fuerza-superior",
-      name: "Pecho y Tríceps",
-      category: "Fuerza",
-      level: "intermediate",
-      duration: 45,
-      calories: 320,
-      exercises: [
-        { name: "Press de banca", sets: 4, reps: 10, weight: 80 },
-        { name: "Press inclinado", sets: 3, reps: 12, weight: 60 },
-        { name: "Fondos", sets: 3, reps: 15, weight: 0 },
-        { name: "Extensiones tríceps", sets: 3, reps: 12, weight: 25 },
-      ],
-      completed: false,
-      note: "Aumentar peso en press de banca",
-      color: "border-red-500",
-      day: "Lunes",
+      id: "1",
+      title: "Mi primer día en el nuevo trabajo",
+      content: `<h1>Un nuevo comienzo</h1>
+      <p>Hoy fue mi primer día en la nueva empresa y debo decir que me siento muy <strong>emocionado</strong> por esta nueva etapa. El equipo me recibió muy bien y ya tengo ganas de empezar a contribuir.</p>
+      
+      <h2>Reflexiones del día</h2>
+      <ul>
+        <li>El ambiente de trabajo es muy colaborativo</li>
+        <li>Mis compañeros son muy amigables</li>
+        <li>Los proyectos se ven muy interesantes</li>
+      </ul>
+      
+      <p><em>Estoy seguro de que esta será una experiencia increíble.</em></p>`,
+      date: "2024-01-15",
+      mood: "excited",
+      tags: ["trabajo", "nuevo comienzo", "reflexiones"],
+      favorite: true,
+      wordCount: 87,
     },
     {
-      id: "cardio-hiit",
-      name: "Piernas",
-      category: "Fuerza",
-      level: "advanced",
-      duration: 60,
-      calories: 400,
-      exercises: [
-        { name: "Sentadillas", sets: 4, reps: 12, weight: 100 },
-        { name: "Peso muerto", sets: 4, reps: 8, weight: 120 },
-        { name: "Prensa", sets: 3, reps: 15, weight: 200 },
-        { name: "Extensiones cuádriceps", sets: 3, reps: 12, weight: 40 },
-      ],
-      completed: true,
-      note: "Excelente sesión, muy intensa",
-      color: "border-purple-500",
-      day: "Martes",
-    },
-    {
-      id: "yoga-flexibilidad",
-      name: "Espalda y Bíceps",
-      category: "Fuerza",
-      level: "intermediate",
-      duration: 50,
-      calories: 280,
-      exercises: [
-        { name: "Dominadas", sets: 4, reps: 8, weight: 0 },
-        { name: "Remo con barra", sets: 4, reps: 10, weight: 70 },
-        { name: "Curl con barra", sets: 3, reps: 12, weight: 30 },
-        { name: "Martillo", sets: 3, reps: 12, weight: 15 },
-      ],
-      completed: false,
-      note: "",
-      color: "border-green-500",
-      day: "Miércoles",
+      id: "2",
+      title: "Reflexiones sobre el crecimiento personal",
+      content: `<h1>Crecimiento Personal</h1>
+      <p>Últimamente he estado reflexionando mucho sobre mi crecimiento personal. Creo que es importante tomarse el tiempo para <strong>autoevaluarse</strong> y pensar en qué áreas podemos mejorar.</p>
+      
+      <blockquote>
+        "El crecimiento personal no es un destino, es un viaje continuo de autodescubrimiento."
+      </blockquote>
+      
+      <p>Algunas áreas en las que quiero enfocarme:</p>
+      <ol>
+        <li>Mejorar mi comunicación</li>
+        <li>Desarrollar más paciencia</li>
+        <li>Ser más organizado</li>
+      </ol>`,
+      date: "2024-01-10",
+      mood: "grateful",
+      tags: ["crecimiento", "reflexiones", "metas"],
+      favorite: false,
+      wordCount: 95,
     },
   ])
 
-  // Próximos entrenamientos
-  const upcomingWorkouts = [
-    {
-      id: "cardio-matutino",
-      name: "Cardio Matutino",
-      day: "Jueves",
-      duration: 30,
-      intensity: "Intensidad media",
-      status: "Programado",
-    },
-    {
-      id: "fuerza-inferior",
-      name: "Hombros y Abdomen",
-      day: "Viernes",
-      duration: 45,
-      intensity: "Alta intensidad",
-      status: "Programado",
-    },
-  ]
+  const [showNewEntry, setShowNewEntry] = useState(false)
+  const [selectedEntry, setSelectedEntry] = useState<DiaryEntry | null>(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [filterMood, setFilterMood] = useState<string>("neutral")
+  const [filterTag, setFilterTag] = useState<string>("")
 
-  const [newWorkout, setNewWorkout] = useState({
-    name: "",
-    category: "",
-    level: "beginner",
-    duration: 30,
-    day: "",
-    exercises: [],
+  // Editor state
+  const [currentTitle, setCurrentTitle] = useState("")
+  const [currentContent, setCurrentContent] = useState("")
+  const [currentMood, setCurrentMood] = useState<keyof typeof MOODS>("neutral")
+  const [currentTags, setCurrentTags] = useState<string[]>([])
+  const [newTag, setNewTag] = useState("")
+  const [fontSize, setFontSize] = useState("16")
+
+  const editorRef = useRef<HTMLDivElement>(null)
+
+  // Obtener todas las etiquetas únicas
+  const allTags = Array.from(new Set(entries.flatMap((entry) => entry.tags)))
+
+  // Filtrar entradas
+  const filteredEntries = entries.filter((entry) => {
+    const matchesSearch =
+      entry.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      entry.content.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesMood = !filterMood || entry.mood === filterMood
+    const matchesTag = !filterTag || entry.tags.includes(filterTag)
+
+    return matchesSearch && matchesMood && matchesTag
   })
 
-  const toggleWorkoutCompletion = (workoutId: string) => {
-    setTodayWorkouts((prevWorkouts) =>
-      prevWorkouts.map((workout) =>
-        workout.id === workoutId
-          ? {
-              ...workout,
-              completed: !workout.completed,
-            }
-          : workout,
-      ),
-    )
-  }
-
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-green-500/20 text-green-400 border-green-500/30"
-      case "intermediate":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
-      case "advanced":
-        return "bg-red-500/20 text-red-400 border-red-500/30"
-      default:
-        return "bg-slate-500/20 text-slate-400 border-slate-500/30"
+  // Funciones del editor
+  const execCommand = (command: string, value?: string) => {
+    document.execCommand(command, false, value)
+    if (editorRef.current) {
+      setCurrentContent(editorRef.current.innerHTML)
     }
   }
 
-  const getLevelText = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "Principiante"
-      case "intermediate":
-        return "Intermedio"
-      case "advanced":
-        return "Avanzado"
-      default:
-        return level
+  const handleFontSizeChange = (size: string) => {
+    setFontSize(size)
+    if (editorRef.current) {
+      editorRef.current.style.fontSize = `${size}px`
     }
   }
+
+  const addTag = () => {
+    if (newTag.trim() && !currentTags.includes(newTag.trim())) {
+      setCurrentTags([...currentTags, newTag.trim()])
+      setNewTag("")
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setCurrentTags(currentTags.filter((tag) => tag !== tagToRemove))
+  }
+
+  const saveEntry = () => {
+    if (!currentTitle.trim() || !currentContent.trim()) return
+
+    const wordCount = currentContent
+      .replace(/<[^>]*>/g, "")
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length
+
+    const newEntry: DiaryEntry = {
+      id: selectedEntry?.id || Date.now().toString(),
+      title: currentTitle,
+      content: currentContent,
+      date: new Date().toISOString().split("T")[0],
+      mood: currentMood,
+      tags: currentTags,
+      favorite: selectedEntry?.favorite || false,
+      wordCount,
+    }
+
+    if (selectedEntry) {
+      setEntries(entries.map((entry) => (entry.id === selectedEntry.id ? newEntry : entry)))
+    } else {
+      setEntries([newEntry, ...entries])
+    }
+
+    resetEditor()
+    setShowNewEntry(false)
+    setSelectedEntry(null)
+  }
+
+  const resetEditor = () => {
+    setCurrentTitle("")
+    setCurrentContent("")
+    setCurrentMood("neutral")
+    setCurrentTags([])
+    setFontSize("16")
+    if (editorRef.current) {
+      editorRef.current.innerHTML = ""
+      editorRef.current.style.fontSize = "16px"
+    }
+  }
+
+  const editEntry = (entry: DiaryEntry) => {
+    setSelectedEntry(entry)
+    setCurrentTitle(entry.title)
+    setCurrentContent(entry.content)
+    setCurrentMood(entry.mood)
+    setCurrentTags(entry.tags)
+    setShowNewEntry(true)
+
+    setTimeout(() => {
+      if (editorRef.current) {
+        editorRef.current.innerHTML = entry.content
+      }
+    }, 100)
+  }
+
+  const toggleFavorite = (entryId: string) => {
+    setEntries(entries.map((entry) => (entry.id === entryId ? { ...entry, favorite: !entry.favorite } : entry)))
+  }
+
+  const deleteEntry = (entryId: string) => {
+    setEntries(entries.filter((entry) => entry.id !== entryId))
+  }
+
+  // Calcular estadísticas
+  const totalEntries = entries.length
+  const totalWords = entries.reduce((sum, entry) => sum + entry.wordCount, 0)
+  const favoriteEntries = entries.filter((entry) => entry.favorite).length
+  const averageWordsPerEntry = totalEntries > 0 ? Math.round(totalWords / totalEntries) : 0
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <div className="w-full max-w-none mx-auto p-4 md:p-6 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-orange-400 to-red-500 bg-clip-text text-transparent">
-              Entrenamiento
-            </h1>
-            <p className="text-slate-400 text-sm md:text-base">Mantén tu cuerpo fuerte y saludable</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Activity className="h-4 w-4" />
-              <span>
-                {weeklyStats.entrenamientos}/{weeklyStats.metaSemanal} esta semana
-              </span>
-            </div>
-          </div>
+    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Mi Diario Personal
+          </h1>
+          <p className="text-slate-400 text-sm md:text-base">
+            Captura tus pensamientos, reflexiones y momentos especiales
+          </p>
         </div>
+        <Button
+          onClick={() => {
+            resetEditor()
+            setShowNewEntry(true)
+          }}
+          className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Nueva Entrada
+        </Button>
+      </div>
 
-        {/* Progreso Semanal */}
-        <Card className="bg-gradient-to-br from-indigo-900/50 to-purple-900/50 border-indigo-800/50">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-indigo-400" />
-              <div>
-                <CardTitle className="text-lg text-white">Progreso Semanal</CardTitle>
-                <CardDescription className="text-slate-300">
-                  Tu rendimiento y consistencia en el entrenamiento
-                </CardDescription>
-              </div>
+      {/* Estadísticas */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/20 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="h-4 w-4 text-blue-400" />
+              <span className="text-xs text-slate-400">Entradas</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-blue-400">{weeklyStats.entrenamientos}</div>
-                <div className="text-sm text-slate-400">Entrenamientos</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-green-400">{weeklyStats.calorias}</div>
-                <div className="text-sm text-slate-400">Calorías</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-purple-400">{weeklyStats.minutos}</div>
-                <div className="text-sm text-slate-400">Minutos</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-orange-400">{weeklyStats.completado}%</div>
-                <div className="text-sm text-slate-400">Completado</div>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm text-slate-300">
-                <span>Meta semanal</span>
-                <span>
-                  {weeklyStats.entrenamientos}/{weeklyStats.metaSemanal}
-                </span>
-              </div>
-              <Progress value={weeklyStats.completado} className="h-2 bg-slate-800" />
-            </div>
+            <div className="text-lg md:text-xl font-bold text-blue-400">{totalEntries}</div>
           </CardContent>
         </Card>
 
-        {/* Gráfico de Tiempo por Día */}
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-400" />
-              <CardTitle className="text-lg">Tiempo de Entrenamiento Semanal</CardTitle>
+        <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/20 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Type className="h-4 w-4 text-green-400" />
+              <span className="text-xs text-slate-400">Palabras</span>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={timeData} margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
-                  <defs>
-                    <linearGradient id="timeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3B82F6" />
-                      <stop offset="100%" stopColor="#1D4ED8" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
-                  <YAxis stroke="#64748b" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1e293b",
-                      border: "1px solid #334155",
-                      borderRadius: "8px",
-                      fontSize: "12px",
-                    }}
-                    formatter={(value, name, props) => [`${value} min`, props.payload.fullDay]}
-                    labelFormatter={(label, payload) => {
-                      const data = payload?.[0]?.payload
-                      return data ? data.fullDay : label
-                    }}
-                  />
-                  <Bar dataKey="tiempo" fill="url(#timeGradient)" name="Minutos" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <div className="text-lg md:text-xl font-bold text-green-400">{totalWords.toLocaleString()}</div>
           </CardContent>
         </Card>
 
-        {/* Entrenamientos de Hoy */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-white">Entrenamientos de Hoy</h2>
-            <Button
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-              onClick={() => setShowNewWorkoutDialog(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Entrenamiento
-            </Button>
-          </div>
-          <div className="space-y-4">
-            {todayWorkouts.map((workout) => (
-              <Card key={workout.id} className={`bg-slate-900/50 border-slate-800 ${workout.color}`}>
-                <CardContent className="p-4 md:p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleWorkoutCompletion(workout.id)}
-                            className="hover:scale-110 transition-all duration-200 cursor-pointer"
-                          >
-                            {workout.completed ? (
-                              <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
-                            ) : (
-                              <Circle className="h-5 w-5 text-slate-400 hover:text-green-400 transition-colors flex-shrink-0" />
-                            )}
-                          </button>
-                          <div>
-                            <h3 className="font-semibold text-white text-base md:text-lg">{workout.name}</h3>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs bg-slate-800 text-slate-300 border-slate-700">
-                                {workout.category}
-                              </Badge>
-                              <Badge variant="outline" className={`text-xs border ${getLevelColor(workout.level)}`}>
-                                {getLevelText(workout.level)}
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30"
-                              >
-                                {workout.day}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {workout.completed ? (
-                            <Badge className="bg-green-600 hover:bg-green-700 text-white">Completado</Badge>
-                          ) : (
-                            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
-                              <Play className="h-4 w-4 mr-1" />
-                              Comenzar
-                            </Button>
-                          )}
-                          <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-white">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <Clock className="h-4 w-4 text-slate-400" />
-                          <Input
-                            type="number"
-                            value={workout.duration}
-                            onChange={(e) => {
-                              const newDuration = Number.parseInt(e.target.value) || 0
-                              setTodayWorkouts((prev) =>
-                                prev.map((w) => (w.id === workout.id ? { ...w, duration: newDuration } : w)),
-                              )
-                            }}
-                            className="w-16 h-6 text-xs bg-slate-800 border-slate-700 text-center"
-                          />
-                          <span>min</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <Flame className="h-4 w-4 text-slate-400" />
-                          <span>{workout.calories} cal</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-slate-300">
-                          <Dumbbell className="h-4 w-4 text-slate-400" />
-                          <span>{workout.exercises.length} ejercicios</span>
-                        </div>
-                      </div>
-
-                      {/* Ejercicios con pesos y repeticiones */}
-                      <div className="space-y-2">
-                        <h4 className="text-sm font-semibold text-slate-300">Ejercicios:</h4>
-                        <div className="grid gap-2">
-                          {workout.exercises.map((exercise, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between p-2 bg-slate-800/30 rounded text-xs"
-                            >
-                              <span className="text-slate-300">{exercise.name}</span>
-                              <div className="flex items-center gap-2 text-slate-400">
-                                <div className="flex items-center gap-1">
-                                  <RotateCcw className="h-3 w-3" />
-                                  <span>
-                                    {exercise.sets}x{exercise.reps}
-                                  </span>
-                                </div>
-                                {exercise.weight > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <Weight className="h-3 w-3" />
-                                    <span>{exercise.weight}kg</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {workout.note && <div className="text-sm text-slate-400 italic">"{workout.note}"</div>}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Próximos Entrenamientos */}
-        <Card className="bg-slate-900/50 border-slate-800">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-blue-400" />
-              <div>
-                <CardTitle className="text-lg text-white">Próximos Entrenamientos</CardTitle>
-                <CardDescription className="text-slate-400">
-                  Tu plan de entrenamiento para los próximos días
-                </CardDescription>
-              </div>
+        <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/20 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="h-4 w-4 text-purple-400" />
+              <span className="text-xs text-slate-400">Favoritas</span>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {upcomingWorkouts.map((workout) => (
-              <div key={workout.id} className="flex items-center justify-between p-4 bg-slate-800/50 rounded-lg">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-white">{workout.name}</h3>
-                  <div className="flex items-center gap-4 mt-1 text-sm text-slate-400">
-                    <span>{workout.day}</span>
-                    <span>•</span>
-                    <span>{workout.duration} min</span>
-                    <span>•</span>
-                    <span>{workout.intensity}</span>
-                  </div>
-                </div>
-                <Badge variant="outline" className="bg-slate-700 text-slate-300 border-slate-600">
-                  {workout.status}
-                </Badge>
-              </div>
-            ))}
+            <div className="text-lg md:text-xl font-bold text-purple-400">{favoriteEntries}</div>
           </CardContent>
         </Card>
 
-        {/* Stats Rápidas */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Heart className="h-4 w-4 text-red-400" />
-                <span className="text-xs text-slate-400">Cardio</span>
-              </div>
-              <div className="text-lg md:text-xl font-bold text-red-400">2</div>
-              <div className="text-xs text-slate-400">esta semana</div>
-            </CardContent>
-          </Card>
+        <Card className="bg-gradient-to-br from-orange-600/20 to-orange-800/20 border-orange-500/20 backdrop-blur-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="h-4 w-4 text-orange-400" />
+              <span className="text-xs text-slate-400">Promedio</span>
+            </div>
+            <div className="text-lg md:text-xl font-bold text-orange-400">{averageWordsPerEntry}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Dumbbell className="h-4 w-4 text-blue-400" />
-                <span className="text-xs text-slate-400">Fuerza</span>
-              </div>
-              <div className="text-lg md:text-xl font-bold text-blue-400">1</div>
-              <div className="text-xs text-slate-400">esta semana</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Zap className="h-4 w-4 text-yellow-400" />
-                <span className="text-xs text-slate-400">HIIT</span>
-              </div>
-              <div className="text-lg md:text-xl font-bold text-yellow-400">1</div>
-              <div className="text-xs text-slate-400">esta semana</div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-slate-900/50 border-slate-800">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="h-4 w-4 text-green-400" />
-                <span className="text-xs text-slate-400">Flexibilidad</span>
-              </div>
-              <div className="text-lg md:text-xl font-bold text-green-400">0</div>
-              <div className="text-xs text-slate-400">esta semana</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Dialog Nuevo Entrenamiento */}
-        <Dialog open={showNewWorkoutDialog} onOpenChange={setShowNewWorkoutDialog}>
-          <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-md">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5 text-indigo-400" />
-                Nuevo Entrenamiento
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Nombre del entrenamiento</Label>
+      {/* Filtros y Búsqueda */}
+      <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-800 backdrop-blur-sm">
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
-                  placeholder="Ej: Pecho y Tríceps"
-                  className="bg-slate-800 border-slate-700"
-                  value={newWorkout.name}
-                  onChange={(e) => setNewWorkout({ ...newWorkout, name: e.target.value })}
+                  placeholder="Buscar en tus entradas..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-slate-800/50 border-slate-700"
                 />
               </div>
+            </div>
+            <Select value={filterMood} onValueChange={setFilterMood}>
+              <SelectTrigger className="w-full md:w-48 bg-slate-800/50 border-slate-700">
+                <SelectValue placeholder="Filtrar por estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                {Object.entries(MOODS).map(([key, mood]) => {
+                  const Icon = mood.icon
+                  return (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" style={{ color: mood.color }} />
+                        {mood.label}
+                      </div>
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+            <Select value={filterTag} onValueChange={setFilterTag}>
+              <SelectTrigger className="w-full md:w-48 bg-slate-800/50 border-slate-700">
+                <SelectValue placeholder="Filtrar por etiqueta" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las etiquetas</SelectItem>
+                {allTags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    {tag}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Categoría</Label>
-                  <Select
-                    value={newWorkout.category}
-                    onValueChange={(value) => setNewWorkout({ ...newWorkout, category: value })}
+      {/* Lista de Entradas */}
+      <div className="space-y-4">
+        {filteredEntries.map((entry) => {
+          const MoodIcon = MOODS[entry.mood].icon
+          return (
+            <Card
+              key={entry.id}
+              className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-800 backdrop-blur-sm hover:border-slate-700 transition-all duration-200"
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="text-xl font-semibold">{entry.title}</h3>
+                      {entry.favorite && <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />}
+                      <div className="flex items-center gap-1">
+                        <MoodIcon className="h-4 w-4" style={{ color: MOODS[entry.mood].color }} />
+                        <span className="text-sm text-slate-400">{MOODS[entry.mood].label}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-sm text-slate-400 mb-3">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        <span>{new Date(entry.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Type className="h-3 w-3" />
+                        <span>{entry.wordCount} palabras</span>
+                      </div>
+                    </div>
+                    <div
+                      className="prose prose-invert prose-sm max-w-none mb-3"
+                      dangerouslySetInnerHTML={{ __html: entry.content.substring(0, 200) + "..." }}
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {entry.tags.map((tag) => (
+                        <Badge key={tag} variant="secondary" className="bg-slate-700/50 text-slate-300">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => toggleFavorite(entry.id)}
+                      className="border-slate-600 hover:bg-slate-700/50"
+                    >
+                      <Star className={`h-4 w-4 ${entry.favorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => editEntry(entry)}
+                      className="border-slate-600 hover:bg-slate-700/50"
+                    >
+                      Editar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {/* Dialog para nueva entrada/editar */}
+      <Dialog open={showNewEntry} onOpenChange={setShowNewEntry}>
+        <DialogContent className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 max-w-4xl max-h-[90vh] overflow-y-auto backdrop-blur-sm">
+          <DialogHeader>
+            <DialogTitle className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              {selectedEntry ? "Editar Entrada" : "Nueva Entrada del Diario"}
+            </DialogTitle>
+            <DialogDescription>Escribe tus pensamientos, reflexiones y experiencias del día</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Título */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Título</label>
+              <Input
+                value={currentTitle}
+                onChange={(e) => setCurrentTitle(e.target.value)}
+                placeholder="Dale un título a tu entrada..."
+                className="bg-slate-800/50 border-slate-700"
+              />
+            </div>
+
+            {/* Barra de herramientas del editor */}
+            <div className="border border-slate-700 rounded-lg p-3 bg-slate-800/30">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                {/* Formato de texto */}
+                <div className="flex items-center gap-1 border-r border-slate-600 pr-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("bold")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
                   >
-                    <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fuerza">Fuerza</SelectItem>
-                      <SelectItem value="cardio">Cardio</SelectItem>
-                      <SelectItem value="hiit">HIIT</SelectItem>
-                      <SelectItem value="flexibilidad">Flexibilidad</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("italic")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("underline")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <Underline className="h-4 w-4" />
+                  </Button>
                 </div>
 
-                <div className="space-y-2">
-                  <Label>Nivel</Label>
-                  <Select
-                    value={newWorkout.level}
-                    onValueChange={(value) => setNewWorkout({ ...newWorkout, level: value })}
+                {/* Encabezados */}
+                <div className="flex items-center gap-1 border-r border-slate-600 pr-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("formatBlock", "h1")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
                   >
-                    <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Principiante</SelectItem>
-                      <SelectItem value="intermediate">Intermedio</SelectItem>
-                      <SelectItem value="advanced">Avanzado</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    <Heading1 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("formatBlock", "h2")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <Heading2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("formatBlock", "h3")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <Heading3 className="h-4 w-4" />
+                  </Button>
                 </div>
+
+                {/* Alineación */}
+                <div className="flex items-center gap-1 border-r border-slate-600 pr-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("justifyLeft")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <AlignLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("justifyCenter")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <AlignCenter className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("justifyRight")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <AlignRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Listas */}
+                <div className="flex items-center gap-1 border-r border-slate-600 pr-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("insertUnorderedList")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("insertOrderedList")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <ListOrdered className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => execCommand("formatBlock", "blockquote")}
+                    className="h-8 w-8 p-0 border-slate-600 hover:bg-slate-700/50"
+                  >
+                    <Quote className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Tamaño de fuente */}
+                <Select value={fontSize} onValueChange={handleFontSizeChange}>
+                  <SelectTrigger className="w-20 h-8 bg-slate-800/50 border-slate-600">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FONT_SIZES.map((size) => (
+                      <SelectItem key={size.value} value={size.value}>
+                        {size.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Duración (min)</Label>
+              {/* Editor de contenido */}
+              <div
+                ref={editorRef}
+                contentEditable
+                className="min-h-[300px] p-4 bg-slate-900/50 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 prose prose-invert max-w-none"
+                style={{ fontSize: `${fontSize}px` }}
+                onInput={(e) => setCurrentContent(e.currentTarget.innerHTML)}
+                placeholder="Escribe tu entrada aquí..."
+              />
+            </div>
+
+            {/* Estado de ánimo y etiquetas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Estado de ánimo</label>
+                <Select value={currentMood} onValueChange={(value: keyof typeof MOODS) => setCurrentMood(value)}>
+                  <SelectTrigger className="bg-slate-800/50 border-slate-700">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(MOODS).map(([key, mood]) => {
+                      const Icon = mood.icon
+                      return (
+                        <SelectItem key={key} value={key}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" style={{ color: mood.color }} />
+                            {mood.label}
+                          </div>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Etiquetas</label>
+                <div className="flex gap-2">
                   <Input
-                    type="number"
-                    placeholder="30"
-                    className="bg-slate-800 border-slate-700"
-                    value={newWorkout.duration}
-                    onChange={(e) => setNewWorkout({ ...newWorkout, duration: Number.parseInt(e.target.value) || 30 })}
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Agregar etiqueta..."
+                    className="bg-slate-800/50 border-slate-700"
+                    onKeyPress={(e) => e.key === "Enter" && addTag()}
                   />
+                  <Button size="sm" onClick={addTag} className="bg-slate-700 hover:bg-slate-600">
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Día</Label>
-                  <Select
-                    value={newWorkout.day}
-                    onValueChange={(value) => setNewWorkout({ ...newWorkout, day: value })}
-                  >
-                    <SelectTrigger className="bg-slate-800 border-slate-700">
-                      <SelectValue placeholder="Seleccionar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Lunes">Lunes</SelectItem>
-                      <SelectItem value="Martes">Martes</SelectItem>
-                      <SelectItem value="Miércoles">Miércoles</SelectItem>
-                      <SelectItem value="Jueves">Jueves</SelectItem>
-                      <SelectItem value="Viernes">Viernes</SelectItem>
-                      <SelectItem value="Sábado">Sábado</SelectItem>
-                      <SelectItem value="Domingo">Domingo</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-wrap gap-2">
+                  {currentTags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-slate-700/50 text-slate-300 cursor-pointer hover:bg-red-600/20"
+                      onClick={() => removeTag(tag)}
+                    >
+                      {tag} ×
+                    </Badge>
+                  ))}
                 </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowNewWorkoutDialog(false)}
-                  className="flex-1 border-slate-700"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={() => {
-                    // Aquí se agregaría la lógica para crear el entrenamiento
-                    setShowNewWorkoutDialog(false)
-                  }}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Crear Entrenamiento
-                </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+
+          <div className="flex gap-2 mt-6">
+            <Button
+              onClick={saveEntry}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 flex-1"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {selectedEntry ? "Actualizar Entrada" : "Guardar Entrada"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowNewEntry(false)
+                setSelectedEntry(null)
+                resetEditor()
+              }}
+              className="border-slate-700"
+            >
+              Cancelar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
