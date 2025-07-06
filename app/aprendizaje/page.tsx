@@ -1,616 +1,467 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { BookOpen, Plus, Target, TrendingUp, Edit, Trash2, Clock, BarChart3, Star } from "lucide-react"
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell } from "recharts"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
+import { Bot, User, Send, Sparkles, MessageCircle, Lightbulb, Zap, Clock, BarChart3 } from "lucide-react"
 
-interface Book {
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  timestamp: Date
+  type?: "text" | "analysis" | "recommendation" | "motivation"
+}
+
+interface CoachingSession {
   id: string
   title: string
-  author: string
-  totalPages: number
-  currentPage: number
-  category: string
-  startDate: string
-  targetDate: string
-  status: "reading" | "completed" | "paused"
-  notes: string
-  rating?: number
+  date: Date
+  duration: number
+  topics: string[]
+  insights: string[]
+  actionItems: string[]
 }
 
-interface ReadingGoal {
-  id: string
-  type: "daily" | "weekly" | "monthly"
-  target: number
-  current: number
-  period: string
-}
-
-const BOOK_CATEGORIES = [
-  "Desarrollo Personal",
-  "Negocios",
-  "Finanzas",
-  "Tecnología",
-  "Historia",
-  "Ciencia",
-  "Ficción",
-  "Biografía",
-  "Salud",
-  "Filosofía",
-]
-
-const CATEGORY_COLORS = {
-  "Desarrollo Personal": "#10b981",
-  Negocios: "#3b82f6",
-  Finanzas: "#f59e0b",
-  Tecnología: "#8b5cf6",
-  Historia: "#ef4444",
-  Ciencia: "#06b6d4",
-  Ficción: "#ec4899",
-  Biografía: "#84cc16",
-  Salud: "#f97316",
-  Filosofía: "#6366f1",
-}
-
-export default function AprendizajePage() {
-  const [books, setBooks] = useState<Book[]>([
+export default function CoachIAPage() {
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
-      title: "Padre Rico Padre Pobre",
-      author: "Robert Kiyosaki",
-      totalPages: 450,
-      currentPage: 120,
-      category: "Finanzas",
-      startDate: "2024-01-15",
-      targetDate: "2024-02-15",
-      status: "reading",
-      notes: "Excelente libro sobre educación financiera. Los conceptos de activos vs pasivos son fundamentales.",
-      rating: 5,
-    },
-    {
-      id: "2",
-      title: "Hábitos Atómicos",
-      author: "James Clear",
-      totalPages: 320,
-      currentPage: 320,
-      category: "Desarrollo Personal",
-      startDate: "2023-12-01",
-      targetDate: "2023-12-31",
-      status: "completed",
-      notes: "Increíble metodología para formar hábitos. El sistema de 1% mejor cada día es poderoso.",
-      rating: 5,
-    },
-    {
-      id: "3",
-      title: "El Arte de la Guerra",
-      author: "Sun Tzu",
-      totalPages: 180,
-      currentPage: 45,
-      category: "Filosofía",
-      startDate: "2024-01-20",
-      targetDate: "2024-02-10",
-      status: "reading",
-      notes: "Estrategias aplicables tanto en negocios como en la vida personal.",
+      role: "assistant",
+      content:
+        "¡Hola! Soy tu Coach IA personal. Estoy aquí para ayudarte a alcanzar tus objetivos y maximizar tu potencial. He analizado tu progreso en las diferentes áreas de Miceo y tengo algunas observaciones interesantes para compartir contigo.\n\n**Análisis de tu progreso actual:**\n\n🎯 **Finanzas**: Excelente control de gastos (67% de cumplimiento)\n💪 **Entrenamiento**: Muy consistente (4/6 entrenamientos esta semana)\n🥗 **Nutrición**: Buen balance nutricional, podrías mejorar hidratación\n✅ **Hábitos**: 75% de completación diaria\n🧠 **Mentalidad**: Progreso sólido en confianza (75%)\n\n¿En qué área te gustaría enfocarte hoy? ¿O hay algún desafío específico que estés enfrentando?",
+      timestamp: new Date(),
+      type: "analysis",
     },
   ])
 
-  const [readingGoals, setReadingGoals] = useState<ReadingGoal[]>([
+  const [inputMessage, setInputMessage] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [coachingSessions] = useState<CoachingSession[]>([
     {
       id: "1",
-      type: "daily",
-      target: 30,
-      current: 25,
-      period: "Hoy",
+      title: "Optimización de Rutina Matutina",
+      date: new Date(Date.now() - 86400000),
+      duration: 25,
+      topics: ["Productividad", "Hábitos", "Bienestar"],
+      insights: [
+        "Tu rutina matutina actual es sólida pero puede optimizarse",
+        "Agregar 10 minutos de meditación podría mejorar tu enfoque",
+        "Considerar preparar el desayuno la noche anterior",
+      ],
+      actionItems: [
+        "Implementar meditación de 10 min después del ejercicio",
+        "Preparar smoothie ingredients la noche anterior",
+        "Revisar progreso en 1 semana",
+      ],
     },
     {
       id: "2",
-      type: "weekly",
-      target: 200,
-      current: 150,
-      period: "Esta semana",
-    },
-    {
-      id: "3",
-      type: "monthly",
-      target: 800,
-      current: 650,
-      period: "Este mes",
+      title: "Estrategia de Ahorro e Inversión",
+      date: new Date(Date.now() - 172800000),
+      duration: 30,
+      topics: ["Finanzas", "Objetivos", "Planificación"],
+      insights: [
+        "Excelente disciplina en el control de gastos",
+        "Oportunidad de aumentar tasa de ahorro en 5%",
+        "Considerar diversificar inversiones",
+      ],
+      actionItems: [
+        "Automatizar transferencia adicional de $3000/mes",
+        "Investigar ETFs de mercados emergentes",
+        "Revisar portafolio mensualmente",
+      ],
     },
   ])
 
-  const [showAddBook, setShowAddBook] = useState(false)
-  const [showEditBook, setShowEditBook] = useState(false)
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null)
-  const [showUpdateProgress, setShowUpdateProgress] = useState(false)
-  const [newPages, setNewPages] = useState("")
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const [newBook, setNewBook] = useState({
-    title: "",
-    author: "",
-    totalPages: "",
-    category: "",
-    targetDate: "",
-    notes: "",
-  })
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
 
-  // Calcular estadísticas
-  const totalBooksRead = books.filter((book) => book.status === "completed").length
-  const currentlyReading = books.filter((book) => book.status === "reading").length
-  const totalPagesRead = books.reduce((total, book) => total + book.currentPage, 0)
-  const averageRating =
-    books.filter((book) => book.rating).reduce((sum, book) => sum + (book.rating || 0), 0) /
-    books.filter((book) => book.rating).length
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
 
-  // Datos para gráficos
-  const categoryData = BOOK_CATEGORIES.map((category) => ({
-    name: category,
-    value: books.filter((book) => book.category === category).length,
-    color: CATEGORY_COLORS[category],
-  })).filter((item) => item.value > 0)
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return
 
-  const weeklyProgressData = [
-    { day: "Lun", pages: 45 },
-    { day: "Mar", pages: 32 },
-    { day: "Mié", pages: 28 },
-    { day: "Jue", pages: 55 },
-    { day: "Vie", pages: 40 },
-    { day: "Sáb", pages: 60 },
-    { day: "Dom", pages: 35 },
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputMessage,
+      timestamp: new Date(),
+      type: "text",
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setInputMessage("")
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/coach-ia/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: inputMessage,
+          context: {
+            previousMessages: messages.slice(-5), // Últimos 5 mensajes para contexto
+            userProgress: {
+              finanzas: { gastos: 32000, ingresos: 45000, ahorros: 8000 },
+              entrenamiento: { entrenamientos_semana: 4, objetivo: 6 },
+              nutricion: { calorias_promedio: 1950, objetivo: 2000 },
+              habitos: { completados: 3, total: 4 },
+              mentalidad: { progreso_confianza: 75 },
+            },
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Error en la respuesta del servidor")
+      }
+
+      const data = await response.json()
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: data.message,
+        timestamp: new Date(),
+        type: data.type || "text",
+      }
+
+      setMessages((prev) => [...prev, assistantMessage])
+    } catch (error) {
+      console.error("Error sending message:", error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.",
+        timestamp: new Date(),
+        type: "text",
+      }
+      setMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }
+
+  const getMessageIcon = (type?: string) => {
+    switch (type) {
+      case "analysis":
+        return <BarChart3 className="h-4 w-4 text-blue-400" />
+      case "recommendation":
+        return <Lightbulb className="h-4 w-4 text-yellow-400" />
+      case "motivation":
+        return <Zap className="h-4 w-4 text-green-400" />
+      default:
+        return <MessageCircle className="h-4 w-4 text-purple-400" />
+    }
+  }
+
+  const getMessageBadge = (type?: string) => {
+    switch (type) {
+      case "analysis":
+        return <Badge className="bg-blue-600 text-white text-xs">Análisis</Badge>
+      case "recommendation":
+        return <Badge className="bg-yellow-600 text-white text-xs">Recomendación</Badge>
+      case "motivation":
+        return <Badge className="bg-green-600 text-white text-xs">Motivación</Badge>
+      default:
+        return null
+    }
+  }
+
+  // Sugerencias rápidas
+  const quickSuggestions = [
+    "¿Cómo puedo mejorar mi rutina matutina?",
+    "Analiza mi progreso financiero",
+    "Dame consejos para mantener la motivación",
+    "¿Qué ejercicios me recomiendas?",
+    "Ayúdame a planificar mis objetivos del mes",
   ]
 
-  const addBook = () => {
-    if (!newBook.title || !newBook.author || !newBook.totalPages) return
-
-    const book: Book = {
-      id: Date.now().toString(),
-      title: newBook.title,
-      author: newBook.author,
-      totalPages: Number.parseInt(newBook.totalPages),
-      currentPage: 0,
-      category: newBook.category || "Desarrollo Personal",
-      startDate: new Date().toISOString().split("T")[0],
-      targetDate: newBook.targetDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
-      status: "reading",
-      notes: newBook.notes,
-    }
-
-    setBooks([...books, book])
-    setNewBook({ title: "", author: "", totalPages: "", category: "", targetDate: "", notes: "" })
-    setShowAddBook(false)
-  }
-
-  const updateProgress = () => {
-    if (!selectedBook || !newPages) return
-
-    const updatedPages = Math.min(Number.parseInt(newPages), selectedBook.totalPages)
-    const updatedBooks = books.map((book) =>
-      book.id === selectedBook.id
-        ? {
-            ...book,
-            currentPage: updatedPages,
-            status: updatedPages >= book.totalPages ? ("completed" as const) : book.status,
-          }
-        : book,
-    )
-
-    setBooks(updatedBooks)
-    setNewPages("")
-    setShowUpdateProgress(false)
-    setSelectedBook(null)
-
-    // Actualizar objetivos de lectura
-    const pagesRead = updatedPages - selectedBook.currentPage
-    if (pagesRead > 0) {
-      setReadingGoals((goals) =>
-        goals.map((goal) => ({
-          ...goal,
-          current: Math.min(goal.current + pagesRead, goal.target),
-        })),
-      )
-    }
-  }
-
-  const deleteBook = (bookId: string) => {
-    setBooks(books.filter((book) => book.id !== bookId))
-  }
-
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 md:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-            Aprendizaje
-          </h1>
-          <p className="text-slate-400 text-sm md:text-base">Cultiva tu mente, expande tus horizontes</p>
-        </div>
-        <Button
-          onClick={() => setShowAddBook(true)}
-          className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 shadow-lg"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Libro
-        </Button>
-      </div>
+    <div className="min-h-screen bg-slate-950 text-white">
+      <div className="flex h-screen">
+        {/* Sidebar - Sesiones Anteriores */}
+        <div className="w-80 bg-slate-900/50 border-r border-slate-800 p-4 hidden lg:block">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-6">
+              <Bot className="h-6 w-6 text-purple-400" />
+              <h2 className="text-lg font-semibold">Coach IA</h2>
+            </div>
 
-      {/* Estadísticas Generales */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-purple-600/20 to-purple-800/20 border-purple-500/20 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="h-4 w-4 text-purple-400" />
-              <span className="text-xs text-slate-400">Libros Leídos</span>
-            </div>
-            <div className="text-lg md:text-xl font-bold text-purple-400">{totalBooksRead}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-600/20 to-blue-800/20 border-blue-500/20 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-4 w-4 text-blue-400" />
-              <span className="text-xs text-slate-400">Leyendo</span>
-            </div>
-            <div className="text-lg md:text-xl font-bold text-blue-400">{currentlyReading}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-600/20 to-green-800/20 border-green-500/20 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <BarChart3 className="h-4 w-4 text-green-400" />
-              <span className="text-xs text-slate-400">Páginas</span>
-            </div>
-            <div className="text-lg md:text-xl font-bold text-green-400">{totalPagesRead.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-600/20 to-yellow-800/20 border-yellow-500/20 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="h-4 w-4 text-yellow-400" />
-              <span className="text-xs text-slate-400">Rating Prom.</span>
-            </div>
-            <div className="text-lg md:text-xl font-bold text-yellow-400">
-              {averageRating ? averageRating.toFixed(1) : "N/A"}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Objetivos de Lectura */}
-      <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-800 backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Target className="h-5 w-5 text-orange-400" />
-            <CardTitle className="text-lg">Objetivos de Lectura</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {readingGoals.map((goal) => (
-            <div key={goal.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  {goal.period} - {goal.target} páginas
-                </span>
-                <span className="text-sm text-slate-400">
-                  {goal.current} / {goal.target}
-                </span>
-              </div>
-              <Progress value={(goal.current / goal.target) * 100} className="h-2" />
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Gráficos */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Distribución por Categorías */}
-        <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-800 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Libros por Categoría</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="space-y-2 mt-4">
-              {categoryData.map((category, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: category.color }} />
-                    <span>{category.name}</span>
-                  </div>
-                  <span className="font-semibold">{category.value}</span>
+            {/* Stats Rápidas */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">Progreso General</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Finanzas</span>
+                  <Badge className="bg-green-600 text-white">67%</Badge>
                 </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Entrenamiento</span>
+                  <Badge className="bg-blue-600 text-white">80%</Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Nutrición</span>
+                  <Badge className="bg-yellow-600 text-white">85%</Badge>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-400">Hábitos</span>
+                  <Badge className="bg-purple-600 text-white">75%</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Separator className="bg-slate-700" />
+
+            {/* Sesiones Anteriores */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-300">Sesiones Anteriores</h3>
+              {coachingSessions.map((session) => (
+                <Card
+                  key={session.id}
+                  className="bg-slate-800/30 border-slate-700 hover:bg-slate-800/50 transition-colors cursor-pointer"
+                >
+                  <CardContent className="p-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium">{session.title}</h4>
+                        <div className="flex items-center gap-1 text-xs text-slate-400">
+                          <Clock className="h-3 w-3" />
+                          {session.duration}min
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {session.topics.slice(0, 2).map((topic, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs bg-slate-700 text-slate-300 border-slate-600"
+                          >
+                            {topic}
+                          </Badge>
+                        ))}
+                        {session.topics.length > 2 && (
+                          <Badge variant="outline" className="text-xs bg-slate-700 text-slate-300 border-slate-600">
+                            +{session.topics.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-400">{session.date.toLocaleDateString()}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Progreso Semanal */}
-        <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-800 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Páginas por Día</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyProgressData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="day" stroke="#64748b" />
-                  <YAxis stroke="#64748b" />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "#1e293b",
-                      border: "1px solid #334155",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                    }}
-                  />
-                  <Bar dataKey="pages" fill="url(#purpleGradient)" radius={[4, 4, 0, 0]}>
-                    <defs>
-                      <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#a855f7" />
-                        <stop offset="100%" stopColor="#7c3aed" />
-                      </linearGradient>
-                    </defs>
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Lista de Libros */}
-      <Card className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border-slate-800 backdrop-blur-sm">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">Mi Biblioteca</CardTitle>
-            <Badge variant="outline" className="bg-slate-700/50">
-              {books.length} libros
-            </Badge>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {books.map((book) => (
-            <div
-              key={book.id}
-              className="bg-gradient-to-r from-slate-800/50 to-slate-700/50 rounded-lg p-4 border border-slate-700/50"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-lg">{book.title}</h3>
-                    <Badge
-                      className={`text-xs ${
-                        book.status === "completed"
-                          ? "bg-green-600/20 text-green-400 border-green-500/30"
-                          : book.status === "reading"
-                            ? "bg-blue-600/20 text-blue-400 border-blue-500/30"
-                            : "bg-yellow-600/20 text-yellow-400 border-yellow-500/30"
+        </div>
+
+        {/* Chat Principal */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="p-4 md:p-6 border-b border-slate-800">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                  Coach IA
+                </h1>
+                <p className="text-slate-400 text-sm md:text-base">Tu mentor personal inteligente</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="text-sm text-slate-400">En línea</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Área de Chat */}
+          <ScrollArea className="flex-1 p-4 md:p-6">
+            <div className="space-y-6 max-w-4xl mx-auto">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {message.role === "assistant" && (
+                    <Avatar className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600">
+                      <AvatarFallback>
+                        <Bot className="h-4 w-4 text-white" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+
+                  <div className={`max-w-[80%] ${message.role === "user" ? "order-first" : ""}`}>
+                    <div
+                      className={`rounded-2xl p-4 ${
+                        message.role === "user"
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white ml-auto"
+                          : "bg-slate-800/50 border border-slate-700"
                       }`}
                     >
-                      {book.status === "completed" ? "Completado" : book.status === "reading" ? "Leyendo" : "Pausado"}
-                    </Badge>
-                  </div>
-                  <p className="text-slate-400 text-sm mb-2">por {book.author}</p>
-                  <div className="flex items-center gap-4 text-sm text-slate-400 mb-2">
-                    <span>{book.category}</span>
-                    <span>
-                      {book.currentPage} / {book.totalPages} páginas
-                    </span>
-                    {book.rating && (
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <span>{book.rating}</span>
+                      {message.role === "assistant" && message.type && (
+                        <div className="flex items-center gap-2 mb-3">
+                          {getMessageIcon(message.type)}
+                          {getMessageBadge(message.type)}
+                        </div>
+                      )}
+
+                      <div className="prose prose-invert max-w-none">
+                        {message.content.split("\n").map((line, index) => {
+                          if (line.startsWith("**") && line.endsWith("**")) {
+                            return (
+                              <h4 key={index} className="font-semibold text-white mb-2 mt-3">
+                                {line.replace(/\*\*/g, "")}
+                              </h4>
+                            )
+                          }
+                          if (
+                            line.startsWith("🎯") ||
+                            line.startsWith("💪") ||
+                            line.startsWith("🥗") ||
+                            line.startsWith("✅") ||
+                            line.startsWith("🧠")
+                          ) {
+                            return (
+                              <div key={index} className="flex items-start gap-2 mb-2 p-2 bg-slate-700/30 rounded-lg">
+                                <span className="text-lg">{line.charAt(0)}</span>
+                                <span className="text-sm text-slate-300">{line.substring(2)}</span>
+                              </div>
+                            )
+                          }
+                          return line ? (
+                            <p key={index} className="mb-2 text-sm leading-relaxed">
+                              {line}
+                            </p>
+                          ) : (
+                            <br key={index} />
+                          )
+                        })}
                       </div>
-                    )}
+                    </div>
+
+                    <div
+                      className={`text-xs text-slate-400 mt-2 ${message.role === "user" ? "text-right" : "text-left"}`}
+                    >
+                      {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </div>
                   </div>
-                  <Progress value={(book.currentPage / book.totalPages) * 100} className="h-2 mb-2" />
-                  {book.notes && <p className="text-sm text-slate-300 italic">{book.notes}</p>}
-                </div>
-                <div className="flex items-center gap-2 ml-4">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedBook(book)
-                      setShowUpdateProgress(true)
-                    }}
-                    className="border-slate-600 hover:bg-slate-700/50"
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedBook(book)
-                      setShowEditBook(true)
-                    }}
-                    className="border-slate-600 hover:bg-slate-700/50"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => deleteBook(book.id)}
-                    className="border-red-600 hover:bg-red-700/20 text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
 
-      {/* Dialog para agregar libro */}
-      <Dialog open={showAddBook} onOpenChange={setShowAddBook}>
-        <DialogContent className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 backdrop-blur-sm">
-          <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
-              Agregar Nuevo Libro
-            </DialogTitle>
-            <DialogDescription>Registra un nuevo libro en tu biblioteca personal</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título *</Label>
-                <Input
-                  id="title"
-                  value={newBook.title}
-                  onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-                  className="bg-slate-800/50 border-slate-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="author">Autor *</Label>
-                <Input
-                  id="author"
-                  value={newBook.author}
-                  onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
-                  className="bg-slate-800/50 border-slate-700"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="pages">Total de Páginas *</Label>
-                <Input
-                  id="pages"
-                  type="number"
-                  value={newBook.totalPages}
-                  onChange={(e) => setNewBook({ ...newBook, totalPages: e.target.value })}
-                  className="bg-slate-800/50 border-slate-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Categoría</Label>
-                <Select value={newBook.category} onValueChange={(value) => setNewBook({ ...newBook, category: value })}>
-                  <SelectTrigger className="bg-slate-800/50 border-slate-700">
-                    <SelectValue placeholder="Seleccionar categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {BOOK_CATEGORIES.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="target">Fecha Objetivo</Label>
-              <Input
-                id="target"
-                type="date"
-                value={newBook.targetDate}
-                onChange={(e) => setNewBook({ ...newBook, targetDate: e.target.value })}
-                className="bg-slate-800/50 border-slate-700"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notas</Label>
-              <Textarea
-                id="notes"
-                value={newBook.notes}
-                onChange={(e) => setNewBook({ ...newBook, notes: e.target.value })}
-                className="bg-slate-800/50 border-slate-700"
-                rows={3}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Button
-              onClick={addBook}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 flex-1"
-            >
-              Agregar Libro
-            </Button>
-            <Button variant="outline" onClick={() => setShowAddBook(false)} className="border-slate-700">
-              Cancelar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                  {message.role === "user" && (
+                    <Avatar className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600">
+                      <AvatarFallback>
+                        <User className="h-4 w-4 text-white" />
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
+              ))}
 
-      {/* Dialog para actualizar progreso */}
-      <Dialog open={showUpdateProgress} onOpenChange={setShowUpdateProgress}>
-        <DialogContent className="bg-gradient-to-br from-slate-900 to-slate-800 border-slate-700 backdrop-blur-sm">
-          <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-              Actualizar Progreso
-            </DialogTitle>
-            <DialogDescription>
-              {selectedBook && `${selectedBook.title} - Página actual: ${selectedBook.currentPage}`}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newPages">Nueva página actual</Label>
-              <Input
-                id="newPages"
-                type="number"
-                value={newPages}
-                onChange={(e) => setNewPages(e.target.value)}
-                max={selectedBook?.totalPages}
-                className="bg-slate-800/50 border-slate-700"
-                placeholder={`Máximo ${selectedBook?.totalPages} páginas`}
-              />
+              {isLoading && (
+                <div className="flex gap-4 justify-start">
+                  <Avatar className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600">
+                    <AvatarFallback>
+                      <Bot className="h-4 w-4 text-white" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                      <span className="text-sm text-slate-400 ml-2">Analizando...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
             </div>
-            {selectedBook && (
-              <div className="text-sm text-slate-400">
-                Progreso:{" "}
-                {Math.round(((Number.parseInt(newPages) || selectedBook.currentPage) / selectedBook.totalPages) * 100)}%
+          </ScrollArea>
+
+          {/* Sugerencias Rápidas */}
+          {messages.length <= 1 && (
+            <div className="p-4 border-t border-slate-800">
+              <div className="max-w-4xl mx-auto">
+                <h3 className="text-sm font-semibold text-slate-300 mb-3">Sugerencias para empezar:</h3>
+                <div className="flex flex-wrap gap-2">
+                  {quickSuggestions.map((suggestion, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setInputMessage(suggestion)}
+                      className="text-xs bg-slate-800/50 border-slate-700 hover:bg-slate-700/50 text-slate-300"
+                    >
+                      {suggestion}
+                    </Button>
+                  ))}
+                </div>
               </div>
-            )}
+            </div>
+          )}
+
+          {/* Input Area */}
+          <div className="p-4 md:p-6 border-t border-slate-800">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Input
+                    value={inputMessage}
+                    onChange={(e) => setInputMessage(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Escribe tu mensaje aquí... (Presiona Enter para enviar)"
+                    className="bg-slate-800/50 border-slate-700 pr-12 py-3 text-sm placeholder:text-slate-500"
+                    disabled={isLoading}
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <Sparkles className="h-4 w-4 text-purple-400" />
+                  </div>
+                </div>
+                <Button
+                  onClick={sendMessage}
+                  disabled={!inputMessage.trim() || isLoading}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 px-6 py-3"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-center mt-3 text-xs text-slate-500">
+                <span>Powered by IA • Respuestas personalizadas basadas en tu progreso</span>
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 mt-4">
-            <Button
-              onClick={updateProgress}
-              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 flex-1"
-            >
-              Actualizar
-            </Button>
-            <Button variant="outline" onClick={() => setShowUpdateProgress(false)} className="border-slate-700">
-              Cancelar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
     </div>
   )
 }
