@@ -155,6 +155,34 @@ export default function MentalidadPage() {
     tomorrow: "",
   })
 
+  // Cargar datos almacenados
+  useEffect(() => {
+    const stored = localStorage.getItem("mentalidad-data")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed.mentalGoals) setMentalGoals(parsed.mentalGoals)
+        if (parsed.reflections)
+          setReflections(
+            parsed.reflections.map((r) => ({ ...r, date: new Date(r.date) }))
+          )
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar datos
+  useEffect(() => {
+    localStorage.setItem(
+      "mentalidad-data",
+      JSON.stringify({
+        mentalGoals,
+        reflections: reflections.map((r) => ({ ...r, date: r.date })),
+      })
+    )
+  }, [mentalGoals, reflections])
+
   const toggleGoalCompletion = (goalId: string) => {
     setMentalGoals((prevGoals) =>
       prevGoals.map((goal) =>

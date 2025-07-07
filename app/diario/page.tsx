@@ -125,6 +125,24 @@ export default function DiarioPage() {
   const [newTag, setNewTag] = useState("")
   const [fontSize, setFontSize] = useState("16")
 
+  // Cargar entradas almacenadas
+  useEffect(() => {
+    const stored = localStorage.getItem("diario-data")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed.entries) setEntries(parsed.entries)
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar entradas
+  useEffect(() => {
+    localStorage.setItem("diario-data", JSON.stringify({ entries }))
+  }, [entries])
+
   const editorRef = useRef<HTMLDivElement>(null)
 
   // Obtener todas las etiquetas únicas

@@ -230,6 +230,36 @@ const FinanzasPage = () => {
     deadline: "",
   })
 
+  // Cargar datos almacenados
+  useEffect(() => {
+    const stored = localStorage.getItem("finanzas-data")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed.expenseData) setExpenseData(parsed.expenseData)
+        if (parsed.transactions)
+          setTransactions(
+            parsed.transactions.map((t) => ({ ...t, date: new Date(t.date) }))
+          )
+        if (parsed.financialGoals) setFinancialGoals(parsed.financialGoals)
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar actualizaciones
+  useEffect(() => {
+    localStorage.setItem(
+      "finanzas-data",
+      JSON.stringify({
+        expenseData,
+        transactions: transactions.map((t) => ({ ...t, date: t.date })),
+        financialGoals,
+      })
+    )
+  }, [expenseData, transactions, financialGoals])
+
   // Filtrar transacciones
   const filteredTransactions = transactions.filter((transaction) => {
     if (transactionFilters.type !== "todos" && transaction.type !== transactionFilters.type) return false
