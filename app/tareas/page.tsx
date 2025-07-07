@@ -109,6 +109,27 @@ export default function TareasPage() {
     category: "",
   })
 
+  // Cargar tareas almacenadas
+  useEffect(() => {
+    const stored = localStorage.getItem("tasks-data")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setTasks(parsed.map((t) => ({ ...t, createdAt: new Date(t.createdAt) })))
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar tareas
+  useEffect(() => {
+    localStorage.setItem(
+      "tasks-data",
+      JSON.stringify(tasks.map((t) => ({ ...t, createdAt: t.createdAt })))
+    )
+  }, [tasks])
+
   // Estadísticas
   const totalTasks = tasks.length
   const completedTasks = tasks.filter((task) => task.completed).length

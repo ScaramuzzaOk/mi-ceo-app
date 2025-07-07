@@ -111,6 +111,26 @@ export default function EntrenamientoPage() {
     },
   ])
 
+  // Cargar entrenamientos almacenados
+  useEffect(() => {
+    const stored = localStorage.getItem("entrenamiento-data")
+    if (stored) {
+      try {
+        setTodayWorkouts(JSON.parse(stored))
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar entrenamientos
+  useEffect(() => {
+    localStorage.setItem(
+      "entrenamiento-data",
+      JSON.stringify(todayWorkouts)
+    )
+  }, [todayWorkouts])
+
   // Próximos entrenamientos
   const upcomingWorkouts = [
     {

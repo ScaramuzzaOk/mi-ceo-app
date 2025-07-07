@@ -83,6 +83,27 @@ export default function CoachIAPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Cargar mensajes almacenados
+  useEffect(() => {
+    const stored = localStorage.getItem("coach-ia-messages")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setMessages(parsed.map((m) => ({ ...m, timestamp: new Date(m.timestamp) })))
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar mensajes
+  useEffect(() => {
+    localStorage.setItem(
+      "coach-ia-messages",
+      JSON.stringify(messages.map((m) => ({ ...m, timestamp: m.timestamp })))
+    )
+  }, [messages])
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }

@@ -142,6 +142,28 @@ export default function AprendizajePage() {
     notes: "",
   })
 
+  // Cargar datos almacenados
+  useEffect(() => {
+    const stored = localStorage.getItem("aprendizaje-data")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (parsed.books) setBooks(parsed.books)
+        if (parsed.readingGoals) setReadingGoals(parsed.readingGoals)
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar datos
+  useEffect(() => {
+    localStorage.setItem(
+      "aprendizaje-data",
+      JSON.stringify({ books, readingGoals })
+    )
+  }, [books, readingGoals])
+
   // Calcular estadísticas
   const totalBooksRead = books.filter((book) => book.status === "completed").length
   const currentlyReading = books.filter((book) => book.status === "reading").length

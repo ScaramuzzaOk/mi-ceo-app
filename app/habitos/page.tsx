@@ -138,6 +138,34 @@ export default function HabitosPage() {
     icon: "⭐",
   })
 
+  // Cargar hábitos almacenados
+  useEffect(() => {
+    const stored = localStorage.getItem("habitos-data")
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        setHabits(
+          parsed.map((h) => ({
+            ...h,
+            lastCompleted: h.lastCompleted ? new Date(h.lastCompleted) : undefined,
+          }))
+        )
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Guardar hábitos
+  useEffect(() => {
+    localStorage.setItem(
+      "habitos-data",
+      JSON.stringify(
+        habits.map((h) => ({ ...h, lastCompleted: h.lastCompleted }))
+      )
+    )
+  }, [habits])
+
   // Función para reiniciar hábitos a las 00:00
   useEffect(() => {
     const checkMidnight = () => {
