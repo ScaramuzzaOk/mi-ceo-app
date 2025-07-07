@@ -442,7 +442,7 @@ const FinanzasPage = () => {
                     <div
   className="w-10 h-10 rounded-lg flex items-center justify-center"
   style={{ backgroundColor: goal.color }}
-><{IconComponent && <IconComponent className="h-5 w-5" />}
+><{IconComponent ? <IconComponent className="h-5 w-5" /> : null}
 
                       <IconComponent className="h-5 w-5" />
                     </div>
@@ -1002,7 +1002,7 @@ const FinanzasPage = () => {
                 <div
                   className={`w-10 h-10 ${transaction.type === "ingreso" ? "bg-green-600/20" : transaction.type === "gasto" ? "bg-red-600/20" : transaction.type === "inversion" ? "bg-purple-600/20" : "bg-blue-600/20"} rounded-lg flex items-center justify-center`}
                 >
-                  <{CategoryIcon && <CategoryIcon className={`h-5 w-5 ${colorClass}`} />}
+                  <{CategoryIcon ? <CategoryIcon className={`h-5 w-5 ${colorClass}`} /> : null}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold">{transaction.name}</h3>
