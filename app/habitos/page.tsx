@@ -140,36 +140,43 @@ export default function HabitosPage() {
 
   // Cargar hábitos almacenados
   useEffect(() => {
-    const stored = localStorage.getItem("habitos-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("habitos-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
         setHabits(
-          parsed.map((h) => ({
+          parsed.map((h: any) => ({
             ...h,
             lastCompleted: h.lastCompleted ? new Date(h.lastCompleted) : undefined,
           }))
         )
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading habitos-data", err)
     }
   }, [])
 
   // Guardar hábitos
   useEffect(() => {
-    localStorage.setItem(
-      "habitos-data",
-      JSON.stringify(
-        habits.map((h) => ({ ...h, lastCompleted: h.lastCompleted }))
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "habitos-data",
+        JSON.stringify(
+          habits.map((h) => ({ ...h, lastCompleted: h.lastCompleted }))
+        )
       )
-    )
+    } catch (err) {
+      console.error("Error saving habitos-data", err)
+    }
   }, [habits])
 
   // Función para reiniciar hábitos a las 00:00
   useEffect(() => {
     const checkMidnight = () => {
       const now = new Date()
+      if (typeof window === "undefined") return
       const lastReset = localStorage.getItem("lastHabitReset")
       const today = now.toDateString()
 
@@ -181,7 +188,11 @@ export default function HabitosPage() {
             completed: false,
           })),
         )
-        localStorage.setItem("lastHabitReset", today)
+        try {
+          localStorage.setItem("lastHabitReset", today)
+        } catch (err) {
+          console.error("Error saving lastHabitReset", err)
+        }
       }
     }
 

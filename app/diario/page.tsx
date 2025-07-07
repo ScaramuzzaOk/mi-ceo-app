@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -127,20 +127,26 @@ export default function DiarioPage() {
 
   // Cargar entradas almacenadas
   useEffect(() => {
-    const stored = localStorage.getItem("diario-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("diario-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed.entries) setEntries(parsed.entries)
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading diario-data", err)
     }
   }, [])
 
   // Guardar entradas
   useEffect(() => {
-    localStorage.setItem("diario-data", JSON.stringify({ entries }))
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem("diario-data", JSON.stringify({ entries }))
+    } catch (err) {
+      console.error("Error saving diario-data", err)
+    }
   }, [entries])
 
   const editorRef = useRef<HTMLDivElement>(null)

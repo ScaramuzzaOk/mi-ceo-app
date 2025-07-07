@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -113,22 +113,28 @@ export default function EntrenamientoPage() {
 
   // Cargar entrenamientos almacenados
   useEffect(() => {
-    const stored = localStorage.getItem("entrenamiento-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("entrenamiento-data")
+      if (stored) {
         setTodayWorkouts(JSON.parse(stored))
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading entrenamiento-data", err)
     }
   }, [])
 
   // Guardar entrenamientos
   useEffect(() => {
-    localStorage.setItem(
-      "entrenamiento-data",
-      JSON.stringify(todayWorkouts)
-    )
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "entrenamiento-data",
+        JSON.stringify(todayWorkouts)
+      )
+    } catch (err) {
+      console.error("Error saving entrenamiento-data", err)
+    }
   }, [todayWorkouts])
 
   // Próximos entrenamientos

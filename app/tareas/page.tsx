@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -111,23 +111,29 @@ export default function TareasPage() {
 
   // Cargar tareas almacenadas
   useEffect(() => {
-    const stored = localStorage.getItem("tasks-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("tasks-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
-        setTasks(parsed.map((t) => ({ ...t, createdAt: new Date(t.createdAt) })))
-      } catch {
-        // ignore parse errors
+        setTasks(parsed.map((t: any) => ({ ...t, createdAt: new Date(t.createdAt) })))
       }
+    } catch (err) {
+      console.error("Error loading tasks-data", err)
     }
   }, [])
 
   // Guardar tareas
   useEffect(() => {
-    localStorage.setItem(
-      "tasks-data",
-      JSON.stringify(tasks.map((t) => ({ ...t, createdAt: t.createdAt })))
-    )
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "tasks-data",
+        JSON.stringify(tasks.map((t) => ({ ...t, createdAt: t.createdAt })))
+      )
+    } catch (err) {
+      console.error("Error saving tasks-data", err)
+    }
   }, [tasks])
 
   // Estadísticas

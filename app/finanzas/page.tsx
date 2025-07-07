@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -232,32 +232,38 @@ const FinanzasPage = () => {
 
   // Cargar datos almacenados
   useEffect(() => {
-    const stored = localStorage.getItem("finanzas-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("finanzas-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed.expenseData) setExpenseData(parsed.expenseData)
         if (parsed.transactions)
           setTransactions(
-            parsed.transactions.map((t) => ({ ...t, date: new Date(t.date) }))
+            parsed.transactions.map((t: any) => ({ ...t, date: new Date(t.date) }))
           )
         if (parsed.financialGoals) setFinancialGoals(parsed.financialGoals)
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading finanzas-data", err)
     }
   }, [])
 
   // Guardar actualizaciones
   useEffect(() => {
-    localStorage.setItem(
-      "finanzas-data",
-      JSON.stringify({
-        expenseData,
-        transactions: transactions.map((t) => ({ ...t, date: t.date })),
-        financialGoals,
-      })
-    )
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "finanzas-data",
+        JSON.stringify({
+          expenseData,
+          transactions: transactions.map((t) => ({ ...t, date: t.date })),
+          financialGoals,
+        })
+      )
+    } catch (err) {
+      console.error("Error saving finanzas-data", err)
+    }
   }, [expenseData, transactions, financialGoals])
 
   // Filtrar transacciones

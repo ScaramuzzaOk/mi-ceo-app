@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -157,30 +157,36 @@ export default function MentalidadPage() {
 
   // Cargar datos almacenados
   useEffect(() => {
-    const stored = localStorage.getItem("mentalidad-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("mentalidad-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed.mentalGoals) setMentalGoals(parsed.mentalGoals)
         if (parsed.reflections)
           setReflections(
-            parsed.reflections.map((r) => ({ ...r, date: new Date(r.date) }))
+            parsed.reflections.map((r: any) => ({ ...r, date: new Date(r.date) }))
           )
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading mentalidad-data", err)
     }
   }, [])
 
   // Guardar datos
   useEffect(() => {
-    localStorage.setItem(
-      "mentalidad-data",
-      JSON.stringify({
-        mentalGoals,
-        reflections: reflections.map((r) => ({ ...r, date: r.date })),
-      })
-    )
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "mentalidad-data",
+        JSON.stringify({
+          mentalGoals,
+          reflections: reflections.map((r) => ({ ...r, date: r.date })),
+        })
+      )
+    } catch (err) {
+      console.error("Error saving mentalidad-data", err)
+    }
   }, [mentalGoals, reflections])
 
   const toggleGoalCompletion = (goalId: string) => {

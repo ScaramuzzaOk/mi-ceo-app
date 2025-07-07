@@ -128,30 +128,37 @@ export default function NutricionPage() {
 
   // Cargar datos almacenados
   useEffect(() => {
-    const stored = localStorage.getItem("nutricion-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("nutricion-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed.userProfile) setUserProfile(parsed.userProfile)
         if (parsed.meals) setMeals(parsed.meals)
         if (parsed.lastResetDate) setLastResetDate(parsed.lastResetDate)
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading nutricion-data", err)
     }
   }, [])
 
   // Guardar datos
   useEffect(() => {
-    localStorage.setItem(
-      "nutricion-data",
-      JSON.stringify({ userProfile, meals, lastResetDate })
-    )
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "nutricion-data",
+        JSON.stringify({ userProfile, meals, lastResetDate })
+      )
+    } catch (err) {
+      console.error("Error saving nutricion-data", err)
+    }
   }, [userProfile, meals, lastResetDate])
 
   // Verificar si necesita reset a medianoche
   useEffect(() => {
     const checkMidnightReset = () => {
+      if (typeof window === "undefined") return
       const currentDate = new Date().toDateString()
       if (currentDate !== lastResetDate) {
         // Reset de comidas a medianoche

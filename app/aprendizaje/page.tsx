@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -144,24 +144,30 @@ export default function AprendizajePage() {
 
   // Cargar datos almacenados
   useEffect(() => {
-    const stored = localStorage.getItem("aprendizaje-data")
-    if (stored) {
-      try {
+    if (typeof window === "undefined") return
+    try {
+      const stored = localStorage.getItem("aprendizaje-data")
+      if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed.books) setBooks(parsed.books)
         if (parsed.readingGoals) setReadingGoals(parsed.readingGoals)
-      } catch {
-        // ignore parse errors
       }
+    } catch (err) {
+      console.error("Error loading aprendizaje-data", err)
     }
   }, [])
 
   // Guardar datos
   useEffect(() => {
-    localStorage.setItem(
-      "aprendizaje-data",
-      JSON.stringify({ books, readingGoals })
-    )
+    if (typeof window === "undefined") return
+    try {
+      localStorage.setItem(
+        "aprendizaje-data",
+        JSON.stringify({ books, readingGoals })
+      )
+    } catch (err) {
+      console.error("Error saving aprendizaje-data", err)
+    }
   }, [books, readingGoals])
 
   // Calcular estadísticas
