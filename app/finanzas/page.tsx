@@ -439,7 +439,10 @@ const FinanzasPage = () => {
               <div key={goal.id} className="bg-slate-800/50 rounded-lg p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 bg-${goal.color}-600 rounded-lg flex items-center justify-center`}>
+                    <div
+  className="w-10 h-10 rounded-lg flex items-center justify-center"
+  style={{ backgroundColor: goal.color }}
+>
                       <IconComponent className="h-5 w-5" />
                     </div>
                     <div>
